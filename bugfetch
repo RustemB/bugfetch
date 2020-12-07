@@ -1,0 +1,52 @@
+#!/usr/bin/env raku
+
+sub MAIN(
+    Bool :$help, #= print this message
+    Bool :$version #= print bugfetch version
+) {
+    if $help {
+        say $*USAGE;
+        exit;
+    }
+    if $version {
+        say v0.1.0;
+        exit;
+    }
+    say "\e[1;33musername      ~ \e[m", $*USER;
+    say "\e[1;33mhostname      ~ \e[m", $*KERNEL.hostname;
+    say "\e[1;33mdistro        ~ \e[m", $*DISTRO.name;
+    say "\e[1;33mkernel        ~ \e[m", $*KERNEL.release;
+    say "\e[1;33muptime        ~ \e[m", get-uptime;
+    say "\e[1;33mload average  ~ \e[m", get-loadavrg;
+    say "\e[1;33mshell         ~ \e[m", %*ENV<SHELL>;
+    say "\e[1;33mterminal      ~ \e[m", %*ENV<TERM> || %*ENV<TERMINAL>;
+    say "\e[1;33mmemory        ~ \e[m", get-memory;
+    say "\e[1;33mswap          ~ \e[m", get-swap;
+    say "\e[1;33meditor        ~ \e[m", %*ENV<EDITOR> || %*ENV<VISUAL> || 'unknown :(';
+    say "\e[1;33mweb browser   ~ \e[m", %*ENV<BROWSER> || 'unknown :(';
+}
+
+sub get-uptime {
+    my $seconds = '/proc/uptime'.IO.words.first;
+    my $hours = floor $seconds / 3600;
+    my $minutes = floor $seconds / 60 - $hours * 60;
+    $hours ~ 'h ' ~ $minutes ~ 'm'
+}
+
+sub get-loadavrg {
+    '/proc/loadavg'.IO.words[^3].join(' ')
+}
+
+sub get-memory {
+    my $used-memory = floor ($*KERNEL.total-memory - $*KERNEL.free-memory) / 1024 / 1024;
+    my $total-memory = floor $*KERNEL.total-memory / 1024 / 1024;
+    $used-memory ~ ' MB / ' ~ $total-memory ~ ' MB'
+}
+
+sub get-swap {
+    my $total-swap = '/proc/meminfo'.IO.lines.grep(*.starts-with('SwapTotal')).words[1];
+    my $free-swap = '/proc/meminfo'.IO.lines.grep(*.starts-with('SwapFree')).words[1];
+    my $used-swap = floor ($total-swap - $free-swap) / 1024;
+    $total-swap = floor $total-swap / 1024;
+    $used-swap ~ ' MB / ' ~ $total-swap ~ ' MB'
+}
